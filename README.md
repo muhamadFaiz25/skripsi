@@ -6,9 +6,10 @@ To install dependencies:
 bun install
 ```
 
-sebelum menjalankan pengujian silahkan import terlebih dahulu database yang telah di lampirkan pada folder database ke mysql
+sebelum menjalankan pengujian silahkan import terlebih dahulu database yang telah di lampirkan pada folder database ke phpmyadmin
 
 To run:
+
 untuk menguji menggunakan apache benchmark silahkan menggunakan perintah ini :
 ```bash
 bun run run_ab_test4.js
