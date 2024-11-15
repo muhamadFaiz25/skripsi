@@ -64,6 +64,7 @@ const urlMap = {
     }
 };
 
+// variabel untuk ubah nilai n dan concurrency
 const numRequests = 50;
 const concurrencyLevel = 50;
 
@@ -115,6 +116,7 @@ async function stopServer() {
 async function main() {
     for (const [framework, methods] of Object.entries(urlMap)) {
         for (const [method, url] of Object.entries(methods)) {
+            // ubah nilai i untuk merubah berapa kali pengujiannya
             for (let i = 0; i < 2; i++) {
                 console.log(`Menjalankan pengujian ${method} untuk ${framework} ke-${i + 1}...`);
                 

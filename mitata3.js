@@ -92,7 +92,7 @@ const main = async () => {
   const results = [];
   let firstIteration = true;
 
-  // Daftar framework yang akan diuji
+  // Daftar framework yang akan diuji, ubah sesuai dengan framework yang ingin di uji
   const frameworks = ['express'];
 
   for (let i = 0; i < 2; i++) {
