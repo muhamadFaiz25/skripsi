@@ -39,6 +39,7 @@ bun/
 ├── package.json              # Package configuration file
 ├── README.md                 # Documentation file for project overview and instructions
 └── run_ab_tests4.js
+```
 
 setelah itu jalan kan perintah ini untuk menjalankan server frameworknya:
 ```bash
