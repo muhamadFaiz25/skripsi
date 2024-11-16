@@ -20,19 +20,18 @@ async function connectToDatabase() {
 
 connectToDatabase().catch(err => console.error(err));
 
+const insertData = async (batchSize) => {
+  const values = [];
+  for (let i = 1; i <= batchSize; i++) {
+    values.push([i, 'luffy', Math.floor(Math.random() * 80)]);
+  }
+  const sql = `INSERT IGNORE INTO users (id, name, age) VALUES ?`;
+  await connection.query(sql, [values]);
+};
+
 app.post('/post10data', async () => {
   try {
-    for (let i = 1; i <= 10; i++) {
-      const data = {
-        id: i,
-        name: "luffy",
-        age: Math.floor(Math.random() * 80),
-      };
-
-      const sql = `INSERT IGNORE INTO users (id, name, age) VALUES (?,?,?)`;
-      await connection.query(sql, [data.id, data.name, data.age]);
-    }
-
+    await insertData(10);
     return { message: "Data created successfully" };
   } catch (err) {
     console.error(err);
@@ -42,17 +41,7 @@ app.post('/post10data', async () => {
 
 app.post('/post100data', async () => {
   try {
-    for (let i = 1; i <= 100; i++) {
-      const data = {
-        id: i,
-        name: "luffy",
-        age: Math.floor(Math.random() * 80),
-      };
-
-      const sql = `INSERT IGNORE INTO users (id, name, age) VALUES (?,?,?)`;
-      await connection.query(sql, [data.id, data.name, data.age]);
-    }
-
+    await insertData(100);
     return { message: "Data created successfully" };
   } catch (err) {
     console.error(err);
@@ -62,17 +51,7 @@ app.post('/post100data', async () => {
 
 app.post('/post500data', async () => {
   try {
-    for (let i = 1; i <= 500; i++) {
-      const data = {
-        id: i,
-        name: "luffy",
-        age: Math.floor(Math.random() * 80),
-      };
-
-      const sql = `INSERT IGNORE INTO users (id, name, age) VALUES (?,?,?)`;
-      await connection.query(sql, [data.id, data.name, data.age]);
-    }
-
+    await insertData(500);
     return { message: "Data created successfully" };
   } catch (err) {
     console.error(err);
@@ -82,17 +61,7 @@ app.post('/post500data', async () => {
 
 app.post('/post1000data', async () => {
   try {
-    for (let i = 1; i <= 1000; i++) {
-      const data = {
-        id: i,
-        name: "luffy",
-        age: Math.floor(Math.random() * 80),
-      };
-
-      const sql = `INSERT IGNORE INTO users (id, name, age) VALUES (?,?,?)`;
-      await connection.query(sql, [data.id, data.name, data.age]);
-    }
-
+    await insertData(1000);
     return { message: "Data created successfully" };
   } catch (err) {
     console.error(err);
@@ -104,115 +73,41 @@ app.get('/', () => {
   return 'hello world';
 });
 
-app.get('/get10data', async () => {
-  const sql = "SELECT * FROM users LIMIT 10";
-  const [results] = await connection.query(sql);
+const fetchData = async (limit) => {
+  const sql = `SELECT * FROM users LIMIT ?`;
+  const [results] = await connection.query(sql, [limit]);
   return results;
-});
+};
 
-app.get('/get100data', async () => {
-  const sql = "SELECT * FROM users LIMIT 100";
-  const [results] = await connection.query(sql);
-  return results;
-});
+app.get('/get10data', async () => fetchData(10));
+app.get('/get100data', async () => fetchData(100));
+app.get('/get500data', async () => fetchData(500));
+app.get('/get1000data', async () => fetchData(1000));
+app.get('/getdata', async () => fetchData(10000));
 
-app.get('/get500data', async () => {
-  const sql = "SELECT * FROM users LIMIT 500";
-  const [results] = await connection.query(sql);
-  return results;
-});
-
-app.get('/get1000data', async () => {
-  const sql = "SELECT * FROM users LIMIT 1000";
-  const [results] = await connection.query(sql);
-  return results;
-});
-
-app.get('/getdata', async () => {
-  const sql = "SELECT * FROM users";
-  const [results] = await connection.query(sql);
-  return results;
-});
-
-app.put('/put10data', async () => {
-  const newName = 'zorro';
-  const newAge = 24;
-
-  const sqlSelect = "SELECT id FROM users LIMIT 10";
-  const [results] = await connection.query(sqlSelect);
-
+const updateData = async (limit) => {
+  const sqlSelect = `SELECT id FROM users LIMIT ?`;
+  const [results] = await connection.query(sqlSelect, [limit]);
   const ids = results.map(result => result.id);
+  
   if (ids.length === 0) {
     return { message: "No users found" };
   }
 
-  const sqlUpdate = `UPDATE users SET name = ?, age = ? WHERE id IN (${ids.join(',')})`;
-  await connection.query(sqlUpdate, [newName, newAge]);
-
+  const sqlUpdate = `UPDATE users SET name = ?, age = ? WHERE id IN (?)`;
+  await connection.query(sqlUpdate, ['zorro', 24, ids]);
   return { message: "Data updated successfully" };
-});
+};
 
-app.put('/put100data', async () => {
-  const newName = 'zorro';
-  const newAge = 24;
-
-  const sqlSelect = "SELECT id FROM users LIMIT 100";
-  const [results] = await connection.query(sqlSelect);
-
-  const ids = results.map(result => result.id);
-  if (ids.length === 0) {
-    return { message: "No users found" };
-  }
-
-  const sqlUpdate = `UPDATE users SET name = ?, age = ? WHERE id IN (${ids.join(',')})`;
-  await connection.query(sqlUpdate, [newName, newAge]);
-
-  return { message: "Data updated successfully" };
-});
-
-app.put('/put500data', async () => {
-  const newName = 'zorro';
-  const newAge = 24;
-
-  const sqlSelect = "SELECT id FROM users LIMIT 500";
-  const [results] = await connection.query(sqlSelect);
-
-  const ids = results.map(result => result.id);
-  if (ids.length === 0) {
-    return { message: "No users found" };
-  }
-
-  const sqlUpdate = `UPDATE users SET name = ?, age = ? WHERE id IN (${ids.join(',')})`;
-  await connection.query(sqlUpdate, [newName, newAge]);
-
-  return { message: "Data updated successfully" };
-});
-
-app.put('/put1000data', async () => {
-  const newName = 'zorro';
-  const newAge = 24;
-
-  const sqlSelect = "SELECT id FROM users LIMIT 1000";
-  const [results] = await connection.query(sqlSelect);
-
-  const ids = results.map(result => result.id);
-  if (ids.length === 0) {
-    return { message: "No users found" };
-  }
-
-  const sqlUpdate = `UPDATE users SET name = ?, age = ? WHERE id IN (${ids.join(',')})`;
-  await connection.query(sqlUpdate, [newName, newAge]);
-
-  return { message: "Data updated successfully" };
-});
+app.put('/put10data', async () => updateData(10));
+app.put('/put100data', async () => updateData(100));
+app.put('/put500data', async () => updateData(500));
+app.put('/put1000data', async () => updateData(1000));
 
 app.put('/:id', async ({ params }) => {
   const id = params.id;
-  const name = 'zorro';
-  const age = 24;
-
   const sql = `UPDATE users SET name = ?, age = ? WHERE id = ?`;
-  const [results] = await connection.query(sql, [name, age, id]);
+  const [results] = await connection.query(sql, ['zorro', 24, id]);
 
   if (results.affectedRows === 0) {
     return { message: "User not found" };
@@ -221,40 +116,18 @@ app.put('/:id', async ({ params }) => {
   return { message: "Data updated successfully" };
 });
 
-app.delete('/delete10data', async () => {
-  const sql = `DELETE FROM users`;
-  await connection.query(sql);
-
+const deleteData = async (limit) => {
+  const sql = `DELETE FROM users LIMIT ?`;
+  await connection.query(sql, [limit]);
   return { message: "Data deleted successfully" };
-});
+};
 
-app.delete('/delete100data', async () => {
-  const sql = `DELETE FROM users`;
-  await connection.query(sql);
+app.delete('/delete10data', async () => deleteData(10));
+app.delete('/delete100data', async () => deleteData(100));
+app.delete('/delete500data', async () => deleteData(500));
+app.delete('/delete1000data', async () => deleteData(1000));
 
-  return { message: "Data deleted successfully" };
-});
-
-app.delete('/delete500data', async () => {
-  const sql = `DELETE FROM users`;
-  await connection.query(sql);
-
-  return { message: "Data deleted successfully" };
-});
-
-app.delete('/delete1000data', async () => {
-  const sql = `DELETE FROM users`;
-  await connection.query(sql);
-
-  return { message: "Data deleted successfully" };
-});
-
-app.delete('/', async () => {
-  const sql = `DELETE FROM users`;
-  await connection.query(sql);
-
-  return { message: "Data deleted successfully" };
-});
+app.delete('/', async () => deleteData(10000));
 
 app.listen(port, () => {
   console.log(`Server berjalan di port http://localhost:${port}`);
