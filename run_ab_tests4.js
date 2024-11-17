@@ -27,58 +27,39 @@ const patterns = {
 // URL untuk setiap framework dan method
 const urlMap = {
     Express: {
-        POST: 'http://localhost:3000/post10data',
-        GET: 'http://localhost:3000/get10data',
-        PUT: 'http://localhost:3000/put10data',
-        DELETE: 'http://localhost:3000/delete10data'
-    },
-    Hapi: {
-        POST: 'http://localhost:3001/post10data',
-        GET: 'http://localhost:3001/get10data',
-        PUT: 'http://localhost:3001/put10data',
-        DELETE: 'http://localhost:3001/delete10data'
-    },
-    Koa: {
-        POST: 'http://localhost:3002/post10data',
-        GET: 'http://localhost:3002/get10data',
-        PUT: 'http://localhost:3002/put10data',
-        DELETE: 'http://localhost:3002/delete10data'
-    },
-    Nest: {
-        POST: 'http://localhost:3003/post10data',
-        GET: 'http://localhost:3003/get10data',
-        PUT: 'http://localhost:3003/put10data',
-        DELETE: 'http://localhost:3003/delete10data'
-    },
-    Elysia: {
-        POST: 'http://localhost:3004/post10data',
-        GET: 'http://localhost:3004/get10data',
-        PUT: 'http://localhost:3004/put10data',
-        DELETE: 'http://localhost:3004/delete10data'
-    },
-    Fastify: {
-        POST: 'http://localhost:3005/post10data',
-        GET: 'http://localhost:3005/get10data',
-        PUT: 'http://localhost:3005/put10data',
-        DELETE: 'http://localhost:3005/delete10data'
+        POST: {
+            10: 'http://localhost:3000/post10data',
+            100: 'http://localhost:3000/post100data',
+            500: 'http://localhost:3000/post500data',
+            1000: 'http://localhost:3000/post1000data'
+        },
+        GET: {
+            10: 'http://localhost:3000/get10data',
+            100: 'http://localhost:3000/get100data',
+            500: 'http://localhost:3000/get500data',
+            1000: 'http://localhost:3000/get1000data'
+        },
+        PUT: {
+            10: 'http://localhost:3000/put10data',
+            100: 'http://localhost:3000/put100data',
+            500: 'http://localhost:3000/put500data',
+            1000: 'http://localhost:3000/put1000data'
+        },
+        DELETE: {
+            10: 'http://localhost:3000/delete10data',
+            100: 'http://localhost:3000/delete100data',
+            500: 'http://localhost:3000/delete500data',
+            1000: 'http://localhost:3000/delete1000data'
+        }
     }
 };
 
-// variabel untuk ubah nilai n dan concurrency
-const numRequests = 50;
+const numRequestsList = [50];
+const dataCounts = [10];
 const concurrencyLevel = 50;
-
-// List untuk menyimpan hasil dari setiap iterasi
 const allResults = [];
-
-// Map file server ke framework
 const serverFiles = {
-    Express: 'express.js',
-    Hapi: 'hapi.js',
-    Koa: 'koa.js',
-    Nest: 'nest.ts',
-    Elysia: 'elysia.ts',
-    Fastify: 'fastify.js'
+    Express: './frameworks/express.js'
 };
 
 async function startServer(framework) {
@@ -92,7 +73,7 @@ async function startServer(framework) {
             console.log(`Server process exited with code ${code}`);
             reject(new Error(`Server process exited with code ${code}`));
         });
-        setTimeout(resolve, 5000); // Wait for 5 seconds to ensure the server starts properly
+        setTimeout(resolve, 5000); // Tunggu 5 detik agar server dapat berjalan dengan baik
     });
 }
 
@@ -113,62 +94,71 @@ async function stopServer() {
     });
 }
 
-async function main() {
-    for (const [framework, methods] of Object.entries(urlMap)) {
-        for (const [method, url] of Object.entries(methods)) {
-            // ubah nilai i untuk merubah berapa kali pengujiannya
-            for (let i = 0; i < 2; i++) {
-                console.log(`Menjalankan pengujian ${method} untuk ${framework} ke-${i + 1}...`);
-                
-                await stopServer();
-                await startServer(framework);
+// Fungsi utama untuk menjalankan pengujian
+async function runTests() {
+    for (const framework in urlMap) {
+        for (const dataCount of dataCounts) {
+            for (const numRequests of numRequestsList) {
+                for (const method of ['POST', 'GET', 'PUT', 'DELETE']) {
+                    const url = urlMap[framework][method][dataCount];
+                    console.log(`\nRunning ${method} test for ${framework} with dataCount = ${dataCount}, numRequests = ${numRequests}...\n`);
 
-                let command;
-                if (method === 'GET') {
-                    command = `ab -c ${concurrencyLevel} -n ${numRequests} ${url}`;
-                } else {
-                    command = `ab -m ${method} -c ${concurrencyLevel} -n ${numRequests} ${url}`;
-                }
-                try {
-                    const data = await runAbTest(command);
-                    const results = { Framework: framework, Method: method, 'Test Number': i + 1 };
+                    await stopServer(); // Stop server before test
+                    await startServer(framework); // Start server for the test
 
-                    for (const [key, pattern] of Object.entries(patterns)) {
-                        const match = pattern.exec(data);
-                        if (match) {
-                            results[key] = match[1];
+                    // Run each method test 10 times
+                    for (let i = 0; i < 2; i++) {
+                        console.log(`Starting iteration ${i + 1} for ${method} test on ${framework}...`);
+                        
+                        const command = method === 'GET'
+                            ? `ab -c ${concurrencyLevel} -n ${numRequests} ${url}`
+                            : `ab -m ${method} -c ${concurrencyLevel} -n ${numRequests} ${url}`;
+
+                        try {
+                            const data = await runAbTest(command);
+                            console.log(`Completed iteration ${i + 1} for ${method} test on ${framework}.\n`);
+
+                            const result = {
+                                Framework: framework,
+                                Method: method,
+                                'Num Requests': numRequests,
+                                DataCount: dataCount
+                            };
+
+                            for (const [key, regex] of Object.entries(patterns)) {
+                                const match = data.match(regex);
+                                if (match) {
+                                    result[key] = parseFloat(match[1]);
+                                }
+                            }
+
+                            allResults.push(result);
+                        } catch (error) {
+                            console.error(`Error during iteration ${i + 1} for ${method} test: ${error}`);
                         }
                     }
-
-                    allResults.push(results);
-                    
-                } catch (error) {
-                    console.error(`Gagal menguji ${method} untuk ${framework} ke-${i + 1}`);
                 }
             }
         }
     }
 
-    // Membuat workbook dan worksheet
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Benchmark Results');
-
-    // Menambahkan header
+    const worksheet = workbook.addWorksheet('Hasil Pengujian');
     worksheet.columns = [
-        { header: 'Framework', key: 'Framework' },
-        { header: 'Method', key: 'Method' },
-        { header: 'Test Number', key: 'Test Number' },
-        ...Object.keys(patterns).map(key => ({ header: key, key: key }))
+        { header: 'Framework', key: 'Framework', width: 15 },
+        { header: 'Method', key: 'Method', width: 10 },
+        { header: 'Num Requests', key: 'Num Requests', width: 15 },
+        { header: 'Data Count', key: 'DataCount', width: 10 },
+        { header: 'Time taken for tests', key: 'Time taken for tests', width: 20 },
+        { header: 'Requests per second', key: 'Requests per second', width: 20 },
+        { header: 'Time per request', key: 'Time per request', width: 20 },
+        { header: 'Transfer rate', key: 'Transfer rate', width: 20 }
     ];
 
-    // Menambahkan data
-    allResults.forEach(result => {
-        worksheet.addRow(result);
-    });
-
-    // Menyimpan workbook ke file
-    await workbook.xlsx.writeFile('benchmark_results.xlsx');
-    console.log('Hasil telah disimpan');
+    allResults.forEach(result => worksheet.addRow(result));
+    await workbook.xlsx.writeFile('./results/results 2.xlsx');
+    console.log('Results saved to results.xlsx');
 }
 
-main();
+// Run the tests
+runTests();
